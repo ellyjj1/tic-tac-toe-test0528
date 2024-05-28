@@ -1,55 +1,50 @@
-const { fromEvent } = require('rxjs');
-const { map, scan, startWith, filter } = require('rxjs/operators');
+document.addEventListener('DOMContentLoaded', (event) => {
+  const cells = document.querySelectorAll('.cell');
+  let currentPlayer = 'X';
 
-// Function to check for a winner
-const checkWinner = (board) => {
-  const winningCombos = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
-    [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
-    [0, 4, 8], [2, 4, 6]             // Diagonals
-  ];
+//list the winner combinations and check every time when a player click on a cell.
+//As a player, game should caculate if any player's X or O sign make a line not matter in rows, columns or diagonals, so that the player can win
+  const checkWinner = () => {
+    const winningCombinations = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+      [0, 4, 8], [2, 4, 6]             // Diagonals
+    ];
 
-  for (let combo of winningCombos) {
-    const [a, b, c] = combo;
-    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-      return board[a];
+    for (const combination of winningCombinations) {
+      const [a, b, c] = combination;
+      if (cells[a].textContent && cells[a].textContent === cells[b].textContent && cells[a].textContent === cells[c].textContent) {
+        alert(`Player ${cells[a].textContent} wins!`);
+        resetBoard();
+        return true;
+      }
     }
-  }
-  return null;
-};
+//As a player, game should caculate if there is not empty cell, so that the game should alert "draw".
+    if ([...cells].every(cell => cell.textContent)) {
+      alert('Draw!');
+      resetBoard();
+      return true;
+    }
 
-// Initialize the game board
-const initialState = {
-  board: Array(9).fill(null),
-  turn: 'X',
-  winner: null
-};
+    return false;
+  };
 
-const cells = document.querySelectorAll('.cell');
+//reset the board after alert "win" or "draw"
+//As a player, i want the game to reset after every win or draw, so that i can play again
+  const resetBoard = () => {
+    cells.forEach(cell => cell.textContent = '');
+  };
 
-const game$ = fromEvent(cells, 'click').pipe(
-  map(event => parseInt(event.target.getAttribute('data-index'))),
-  filter(index => !initialState.board[index]), // Only allow clicking empty cells
-  scan((state, index) => {
-    const newBoard = state.board.slice();
-    newBoard[index] = state.turn;
-    const winner = checkWinner(newBoard);
-    return {
-      board: newBoard,
-      turn: state.turn === 'X' ? 'O' : 'X',
-      winner: winner
-    };
-  }, initialState),
-  startWith(initialState)
-);
-
-// Subscribe to the game state and update the UI
-game$.subscribe(state => {
-  state.board.forEach((value, index) => {
-    cells[index].textContent = value;
+//2 players use X or O and click on the cell
+//As a player, I should be able to click on a cell and and X or O should be added to the board, so that the game can be played
+  cells.forEach(cell => {
+    cell.addEventListener('click', () => {
+      if (!cell.textContent) {
+        cell.textContent = currentPlayer;
+        if (!checkWinner()) {
+          currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        }
+      }
+    });
   });
-
-  if (state.winner) {
-    alert(`Player ${state.winner} wins!`);
-  }
 });
